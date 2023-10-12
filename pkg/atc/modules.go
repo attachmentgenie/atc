@@ -159,12 +159,12 @@ func (t *Atc) setupModuleManager() error {
 
 	deps := map[string][]string{
 		API:        {Server},
-		Autoscaler: {Server},
+		Autoscaler: {API},
 		Consul:     {Forwarder, Redirecter},
 		Deployer:   {API},
 		EventSink:  {Server},
-		Nomad:      {Deployer, EventSink},
-		All:        {API, Deployer, EventSink, Forwarder, Redirecter},
+		Nomad:      {Autoscaler, Deployer, EventSink},
+		All:        {API, Autoscaler, Deployer, EventSink, Forwarder, Redirecter},
 	}
 	for mod, targets := range deps {
 		if err := mm.AddDependency(mod, targets...); err != nil {
