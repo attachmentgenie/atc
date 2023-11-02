@@ -26,18 +26,24 @@ brews:
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
 builds:
   - id: darwin
+    env:
+      - CGO_ENABLED=0
     goos:
       - darwin
     goarch:
       - amd64
       - arm64
   - id: linux
+    env:
+      - CGO_ENABLED=0
     goos:
       - linux
     goarch:
       - amd64
       - arm64
   - id: windows
+    env:
+      - CGO_ENABLED=0
     goos:
       - windows
     goarch:
