@@ -24,7 +24,6 @@ run: ## Run binary.
 	./${APP-BIN} server
 .PHONY: fresh
 fresh: build run
-
 .PHONY: lint
 lint:
 	golangci-lint run -D errcheck
@@ -32,9 +31,12 @@ lint:
 consul-dev:
 	consul agent -dev
 .PHONY: consul-config
--consul-config:
+consul-config:
 	consul config write scripts/failover.hcl
 	consul config write scripts/redirect.hcl
 .PHONY: nomad-dev
 nomad-dev:
 	nomad agent -dev -bind 0.0.0.0
+	sudo nomad agent -dev \
+	-bind 0.0.0.0 \
+	-network-interface='{{ GetDefaultInterfaces | attr "name" }}'

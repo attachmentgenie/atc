@@ -79,7 +79,7 @@ docker_manifests:
       - "ghcr.io/attachmentgenie/{{.ProjectName}}:{{ .Version }}-amd64"
       - "ghcr.io/attachmentgenie/{{.ProjectName}}:{{ .Version }}-arm64v8"
 nfpms:
-  - id: darwin
+  - id: linux
     maintainer: 'bram vogelaar <bram@attachmentgenie.com>'
     package_name: "{{.ProjectName}}"
     builds:
@@ -87,6 +87,8 @@ nfpms:
     formats:
       - deb
       - rpm
+sboms:
+  - artifacts: archive
 release:
   prerelease: auto
 checksum:

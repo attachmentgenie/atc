@@ -6,5 +6,6 @@ manually setting up failover and redirect consul service-resolver config can be 
 ## install
 
 ### os x
-    brew tap attachmentgenie/atc https://github.com/attachmentgenie/atc.git
-    brew install atc
+
+    brew tap attachmentgenie/tap
+    brew install attachmentgenie/tap/atc
