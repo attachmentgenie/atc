@@ -1,18 +1,21 @@
 package atc
 
 import (
-	"github.com/attachmentgenie/atc/pkg/atc/autoscaler"
-	"github.com/attachmentgenie/atc/pkg/atc/deployer"
-	"github.com/attachmentgenie/atc/pkg/atc/event_sink"
-	"github.com/attachmentgenie/atc/pkg/atc/forwarder"
-	"github.com/attachmentgenie/atc/pkg/atc/redirecter"
 	"github.com/grafana/dskit/modules"
 	"github.com/grafana/dskit/server"
 	"github.com/grafana/dskit/services"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-	promversion "github.com/prometheus/common/version"
+	promversion "github.com/prometheus/client_golang/prometheus/collectors/version"
+	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	"golang.org/x/exp/slices"
+
+	"github.com/attachmentgenie/atc/pkg/atc/autoscaler"
+	"github.com/attachmentgenie/atc/pkg/atc/deployer"
+	"github.com/attachmentgenie/atc/pkg/atc/event_sink"
+	"github.com/attachmentgenie/atc/pkg/atc/forwarder"
+	"github.com/attachmentgenie/atc/pkg/atc/radar"
+	"github.com/attachmentgenie/atc/pkg/atc/redirecter"
 )
 
 const (
@@ -24,6 +27,7 @@ const (
 	Forwarder  string = "forwarder"
 	Nomad      string = "nomad"
 	Server     string = "server"
+	Radar      string = "radar"
 	Redirecter string = "redirecter"
 	All        string = "all"
 )
@@ -32,7 +36,7 @@ func (t *Atc) initAPI() (services.Service, error) {
 	landingConfig := web.LandingConfig{
 		Name:        "ATC",
 		Description: "Atc",
-		Version:     promversion.Version,
+		Version:     version.Version,
 		Links: []web.LandingLinks{
 			{
 				Address: "/health",
@@ -58,28 +62,29 @@ func (t *Atc) initAPI() (services.Service, error) {
 }
 
 func (t *Atc) initAutoscaler() (services.Service, error) {
-	autoscaler, err := autoscaler.New(Logger)
+	autosclr, err := autoscaler.New(t.logger)
 	if err != nil {
 		return nil, err
 	}
-	t.Autoscaler = autoscaler
+	t.Autoscaler = autosclr
 	return t.Autoscaler, nil
 }
 
 func (t *Atc) initDeployer() (services.Service, error) {
-	//t.Server.HTTP.Handle("/v1/jobs", ah).Methods("GET", "PUT")
-	//t.Server.HTTP.Handle("/v1/validate/job", ah).Methods("PUT")
-
-	deploy, err := deployer.New(Logger)
+	deploy, err := deployer.New(t.logger)
 	if err != nil {
 		return nil, err
 	}
+
+	t.Server.HTTP.Path("/v1/jobs").Methods("GET", "PUT").Handler(deploy.OkHandler())
+	t.Server.HTTP.Path("/v1/validate/job").Methods("PUT").Handler(deploy.OkHandler())
+
 	t.Deployer = deploy
 	return t.Deployer, nil
 }
 
 func (t *Atc) initEventSink() (services.Service, error) {
-	sink, err := event_sink.New(Logger)
+	sink, err := event_sink.New(t.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +93,7 @@ func (t *Atc) initEventSink() (services.Service, error) {
 }
 
 func (t *Atc) initForwarder() (services.Service, error) {
-	forward, err := forwarder.New(Logger)
+	forward, err := forwarder.New(t.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -135,8 +140,17 @@ func (t *Atc) initServer() (services.Service, error) {
 	return s, nil
 }
 
+func (t *Atc) initRadar() (services.Service, error) {
+	rdr, err := radar.New(t.logger)
+	if err != nil {
+		return nil, err
+	}
+	t.Radar = rdr
+	return t.Radar, nil
+}
+
 func (t *Atc) initRedirecter() (services.Service, error) {
-	redirect, err := redirecter.New(Logger)
+	redirect, err := redirecter.New(t.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -145,13 +159,14 @@ func (t *Atc) initRedirecter() (services.Service, error) {
 }
 
 func (t *Atc) setupModuleManager() error {
-	mm := modules.NewManager(Logger)
+	mm := modules.NewManager(t.logger)
 	mm.RegisterModule(Server, t.initServer, modules.UserInvisibleModule)
 	mm.RegisterModule(API, t.initAPI, modules.UserInvisibleModule)
 	mm.RegisterModule(Autoscaler, t.initAutoscaler)
 	mm.RegisterModule(Deployer, t.initDeployer)
 	mm.RegisterModule(EventSink, t.initEventSink)
 	mm.RegisterModule(Forwarder, t.initForwarder)
+	mm.RegisterModule(Radar, t.initRadar)
 	mm.RegisterModule(Redirecter, t.initRedirecter)
 	mm.RegisterModule(Consul, nil)
 	mm.RegisterModule(Nomad, nil)
@@ -159,12 +174,13 @@ func (t *Atc) setupModuleManager() error {
 
 	deps := map[string][]string{
 		API:        {Server},
-		Autoscaler: {API},
+		Autoscaler: {Server},
 		Consul:     {Forwarder, Redirecter},
 		Deployer:   {API},
 		EventSink:  {Server},
-		Nomad:      {Autoscaler, Deployer, EventSink},
-		All:        {API, Autoscaler, Deployer, EventSink, Forwarder, Redirecter},
+		Radar:      {Server},
+		Nomad:      {Autoscaler, Deployer, EventSink, Radar},
+		All:        {API, Autoscaler, Deployer, EventSink, Forwarder, Radar, Redirecter},
 	}
 	for mod, targets := range deps {
 		if err := mm.AddDependency(mod, targets...); err != nil {

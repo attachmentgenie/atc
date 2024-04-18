@@ -3,10 +3,10 @@ package atc
 import (
 	"context"
 	"fmt"
-	"github.com/attachmentgenie/atc/pkg/atc/autoscaler"
-	"github.com/attachmentgenie/atc/pkg/atc/deployer"
-	"github.com/attachmentgenie/atc/pkg/atc/event_sink"
-	"github.com/attachmentgenie/atc/pkg/atc/redirecter"
+	"net/http"
+	"strings"
+
+	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/grafana/dskit/flagext"
 	"github.com/grafana/dskit/modules"
@@ -15,10 +15,13 @@ import (
 	"github.com/grafana/dskit/signals"
 	"github.com/pkg/errors"
 	"go.uber.org/atomic"
-	"net/http"
-	"strings"
 
+	"github.com/attachmentgenie/atc/pkg/atc/autoscaler"
+	"github.com/attachmentgenie/atc/pkg/atc/deployer"
+	"github.com/attachmentgenie/atc/pkg/atc/event_sink"
 	"github.com/attachmentgenie/atc/pkg/atc/forwarder"
+	"github.com/attachmentgenie/atc/pkg/atc/radar"
+	"github.com/attachmentgenie/atc/pkg/atc/redirecter"
 )
 
 type Config struct {
@@ -28,14 +31,15 @@ type Config struct {
 }
 
 type Atc struct {
-	Cfg Config
-
+	Cfg    Config
+	logger log.Logger
 	Server *server.Server
 
 	Autoscaler *autoscaler.Autoscaler
 	Deployer   *deployer.Deployer
 	EventSink  *event_sink.EventSink
 	Forwarder  *forwarder.Forwarder
+	Radar      *radar.Radar
 	Redirecter *redirecter.Redirecter
 
 	// set during initialization
@@ -44,10 +48,12 @@ type Atc struct {
 }
 
 func New(cfg Config) (*Atc, error) {
-	InitLogger(&cfg.Server)
+	logger := initLogger(cfg.Server.LogFormat, cfg.Server.LogLevel)
+	cfg.Server.Log = logger
 
 	atc := &Atc{
-		Cfg: cfg,
+		Cfg:    cfg,
+		logger: logger,
 	}
 
 	if err := atc.setupModuleManager(); err != nil {
@@ -88,8 +94,8 @@ func (t *Atc) Run() error {
 	t.Server.HTTP.Path("/health").Handler(t.readyHandler(sm, shutdownRequested))
 
 	// Let's listen for events from this manager, and log them.
-	healthy := func() { level.Info(Logger).Log("msg", "Application started") }
-	stopped := func() { level.Info(Logger).Log("msg", "Application stopped") }
+	healthy := func() { level.Info(t.logger).Log("msg", "Application started") }
+	stopped := func() { level.Info(t.logger).Log("msg", "Application stopped") }
 	serviceFailed := func(service services.Service) {
 		// if any service fails, stop entire Mimir
 		sm.StopAsync()
@@ -98,20 +104,20 @@ func (t *Atc) Run() error {
 		for m, s := range t.ServiceMap {
 			if s == service {
 				if errors.Is(service.FailureCase(), modules.ErrStopProcess) {
-					level.Info(Logger).Log("msg", "received stop signal via return error", "module", m, "err", service.FailureCase())
+					level.Info(t.logger).Log("msg", "received stop signal via return error", "module", m, "err", service.FailureCase())
 				} else {
-					level.Error(Logger).Log("msg", "module failed", "module", m, "err", service.FailureCase())
+					level.Error(t.logger).Log("msg", "module failed", "module", m, "err", service.FailureCase())
 				}
 				return
 			}
 		}
 
-		level.Error(Logger).Log("msg", "module failed", "module", "unknown", "err", service.FailureCase())
+		level.Error(t.logger).Log("msg", "module failed", "module", "unknown", "err", service.FailureCase())
 	}
 
 	sm.AddListener(services.NewManagerListener(healthy, stopped, serviceFailed))
 
-	handler := signals.NewHandler(t.Server.Log)
+	handler := signals.NewHandler(t.logger)
 	go func() {
 		handler.Loop()
 
@@ -150,7 +156,7 @@ func (t *Atc) Run() error {
 func (t *Atc) readyHandler(sm *services.Manager, shutdownRequested *atomic.Bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if shutdownRequested.Load() {
-			level.Debug(Logger).Log("msg", "application is stopping")
+			level.Debug(t.logger).Log("msg", "application is stopping")
 			http.Error(w, "Application is stopping", http.StatusServiceUnavailable)
 			return
 		}
@@ -163,7 +169,7 @@ func (t *Atc) readyHandler(sm *services.Manager, shutdownRequested *atomic.Bool)
 				}
 			}
 
-			level.Debug(Logger).Log("msg", "some services are not Running", "services", strings.Join(serviceNamesStates, ", "))
+			level.Debug(t.logger).Log("msg", "some services are not Running", "services", strings.Join(serviceNamesStates, ", "))
 			httpResponse := "Some services are not Running:\n" + strings.Join(serviceNamesStates, "\n")
 			http.Error(w, httpResponse, http.StatusServiceUnavailable)
 			return

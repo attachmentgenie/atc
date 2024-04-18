@@ -1,4 +1,4 @@
-package event_sink
+package radar
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/consul/api/watch"
 )
 
-type EventSink struct {
+type Radar struct {
 	services.Service
 
 	logger log.Logger
@@ -17,24 +17,24 @@ type EventSink struct {
 	watchServicesChan chan struct{}
 }
 
-func (f *EventSink) starting(ctx context.Context) error {
+func (f *Radar) starting(ctx context.Context) error {
 	return nil
 }
 
-func (f *EventSink) stopping(_ error) error {
+func (f *Radar) stopping(_ error) error {
 	return nil
 }
 
-func New(logger log.Logger) (*EventSink, error) {
+func New(logger log.Logger) (*Radar, error) {
 
-	f := &EventSink{
+	f := &Radar{
 		logger: logger,
 	}
 	f.Service = services.NewBasicService(f.starting, f.watcher, f.stopping)
 	return f, nil
 }
 
-func (f *EventSink) watcher(ctx context.Context) error {
+func (f *Radar) watcher(ctx context.Context) error {
 	client, err := api.NewClient(&api.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to connect to consul: %s", err.Error())

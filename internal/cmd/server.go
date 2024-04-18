@@ -30,7 +30,7 @@ var serverCmd = &cobra.Command{
 			panic(err)
 		}
 
-		level.Info(atc.Logger).Log("msg", "Starting application", "version", version.Info())
+		level.Info(t.Cfg.Server.Log).Log("msg", "Starting application", "version", version.Info())
 		err = t.Run()
 		if err != nil {
 			panic(err)

@@ -45,7 +45,7 @@ func NewServerService(serv *server.Server, servicesToWaitFor func() []services.S
 
 		// if not closed yet, wait until server stops.
 		<-serverDone
-		level.Info(Logger).Log("msg", "server stopped")
+		level.Info(serv.Log).Log("msg", "server stopped")
 		return nil
 	}
 

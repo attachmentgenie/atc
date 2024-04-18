@@ -1,25 +1,20 @@
 package atc
 
 import (
+	"os"
+
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/grafana/dskit/server"
-	"os"
-	"time"
+	dslog "github.com/grafana/dskit/log"
 )
 
-var (
-	DefaultTimestampUTC = log.TimestampFormat(
-		func() time.Time { return time.Now().UTC() },
-		time.DateTime,
-	)
-	Logger log.Logger
-)
+func initLogger(logFormat string, logLevel dslog.Level) log.Logger {
+	writer := log.NewSyncWriter(os.Stderr)
+	logger := dslog.NewGoKitWithWriter(logFormat, writer)
 
-func InitLogger(cfg *server.Config) {
-	logger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-	logger = log.With(logger, "ts", DefaultTimestampUTC, "caller", log.Caller(5))
+	// use UTC timestamps and skip 5 stack frames.
+	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.Caller(5))
+	logger = level.NewFilter(logger, logLevel.Option)
 
-	Logger = level.NewFilter(logger)
-	cfg.Log = level.NewFilter(log.With(logger, "caller", log.Caller(6)))
+	return logger
 }

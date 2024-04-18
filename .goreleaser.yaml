@@ -17,7 +17,7 @@ archives:
 brews:
   - ids:
       - darwin
-    folder: Formula
+    directory: Formula
     install: |
       bin.install "{{.ProjectName}}"
     repository:
@@ -33,6 +33,12 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags:
+      - -s -w
+      - -X "github.com/prometheus/common/version.Revision={{.ShortCommit}}"
+      - -X "github.com/prometheus/common/version.Branch={{.Branch}}"
+      - -X "github.com/prometheus/common/version.BuildDate={{.Date}}"
+      - -X "github.com/prometheus/common/version.Version={{.Version}}"
   - id: linux
     env:
       - CGO_ENABLED=0
@@ -41,6 +47,12 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags:
+      - -s -w
+      - -X "github.com/prometheus/common/version.Revision={{.ShortCommit}}"
+      - -X "github.com/prometheus/common/version.Branch={{.Branch}}"
+      - -X "github.com/prometheus/common/version.BuildDate={{.Date}}"
+      - -X "github.com/prometheus/common/version.Version={{.Version}}"
   - id: windows
     env:
       - CGO_ENABLED=0
@@ -48,6 +60,12 @@ builds:
       - windows
     goarch:
       - amd64
+    ldflags:
+      - -s -w
+      - -X "github.com/prometheus/common/version.Revision={{.ShortCommit}}"
+      - -X "github.com/prometheus/common/version.Branch={{.Branch}}"
+      - -X "github.com/prometheus/common/version.BuildDate={{.Date}}"
+      - -X "github.com/prometheus/common/version.Version={{.Version}}"
 dockers:
   - image_templates:
       - "ghcr.io/attachmentgenie/{{.ProjectName}}:{{ .Version }}-amd64"
@@ -57,7 +75,7 @@ dockers:
       - "--label=org.opencontainers.image.source https://github.com/attachmentgenie/{{.ProjectName}}"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.revision={{.ShortCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
       - "--platform=linux/amd64"
   - image_templates:
@@ -70,7 +88,7 @@ dockers:
       - "--label=org.opencontainers.image.source https://github.com/attachmentgenie/{{.ProjectName}}"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.revision={{.ShortCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
       - "--platform=linux/arm64/v8"
 docker_manifests:

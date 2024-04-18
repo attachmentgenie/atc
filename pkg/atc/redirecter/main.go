@@ -37,7 +37,7 @@ func New(logger log.Logger) (*Redirecter, error) {
 func (f *Redirecter) watcher(ctx context.Context) error {
 	client, err := api.NewClient(&api.Config{})
 	if err != nil {
-		return fmt.Errorf("failed to connect to nomad: %s", err.Error())
+		return fmt.Errorf("failed to connect to consul: %s", err.Error())
 	}
 
 	servicesWatcher, parseErr := watch.Parse(map[string]interface{}{"type": "services"})
