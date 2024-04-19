@@ -1,6 +1,6 @@
 # atc
 
-![goreleaser](https://github.com/attachmentgenie/atc/workflows/goreleaser/badge.svg)
+![goreleaser](https://github.com/attachmentgenie/atc/actions/workflows/publish.yml/badge.svg)
 
 Like with actual airports we sometimes need a process that controls what should happen with requests for (failing) consul services.
 manually setting up failover and redirect consul service-resolver config can be quite laborious. ATC can help make live that little bit easier by creating those for us.
