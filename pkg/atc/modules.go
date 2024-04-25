@@ -14,6 +14,7 @@ import (
 	"github.com/attachmentgenie/atc/pkg/atc/deployer"
 	"github.com/attachmentgenie/atc/pkg/atc/event_sink"
 	"github.com/attachmentgenie/atc/pkg/atc/forwarder"
+	"github.com/attachmentgenie/atc/pkg/atc/incident"
 	"github.com/attachmentgenie/atc/pkg/atc/radar"
 	"github.com/attachmentgenie/atc/pkg/atc/redirecter"
 )
@@ -21,10 +22,12 @@ import (
 const (
 	API        string = "api"
 	Autoscaler string = "autoscaler"
+	Boundary   string = "boundary"
 	Consul     string = "consul"
 	Deployer   string = "deployer"
 	EventSink  string = "event_sink"
 	Forwarder  string = "forwarder"
+	Incident   string = "incident"
 	Nomad      string = "nomad"
 	Server     string = "server"
 	Radar      string = "radar"
@@ -49,6 +52,10 @@ func (t *Atc) initAPI() (services.Service, error) {
 			{
 				Address: "/ready",
 				Text:    "Ready",
+			},
+			{
+				Address: "/services",
+				Text:    "Services",
 			},
 		},
 	}
@@ -101,6 +108,15 @@ func (t *Atc) initForwarder() (services.Service, error) {
 	return t.Forwarder, nil
 }
 
+func (t *Atc) initIncident() (services.Service, error) {
+	incident, err := incident.New(t.logger)
+	if err != nil {
+		return nil, err
+	}
+	t.Incident = incident
+	return t.Incident, nil
+}
+
 func (t *Atc) initServer() (services.Service, error) {
 
 	t.Cfg.Server.RegisterInstrumentation = true
@@ -112,6 +128,7 @@ func (t *Atc) initServer() (services.Service, error) {
 	}
 	serv.Registerer.Unregister(collectors.NewGoCollector())
 	serv.Registerer.MustRegister(promversion.NewCollector(t.Cfg.Server.MetricsNamespace))
+	serv.HTTP.Path("/ready").Handler(OkHandler())
 
 	t.Server = serv
 
@@ -166,21 +183,21 @@ func (t *Atc) setupModuleManager() error {
 	mm.RegisterModule(Deployer, t.initDeployer)
 	mm.RegisterModule(EventSink, t.initEventSink)
 	mm.RegisterModule(Forwarder, t.initForwarder)
+	mm.RegisterModule(Incident, t.initIncident)
 	mm.RegisterModule(Radar, t.initRadar)
 	mm.RegisterModule(Redirecter, t.initRedirecter)
+	mm.RegisterModule(Boundary, nil)
 	mm.RegisterModule(Consul, nil)
 	mm.RegisterModule(Nomad, nil)
 	mm.RegisterModule(All, nil)
 
 	deps := map[string][]string{
-		API:        {Server},
-		Autoscaler: {Server},
-		Consul:     {Forwarder, Redirecter},
-		Deployer:   {API},
-		EventSink:  {Server},
-		Radar:      {Server},
-		Nomad:      {Autoscaler, Deployer, EventSink, Radar},
-		All:        {API, Autoscaler, Deployer, EventSink, Forwarder, Radar, Redirecter},
+		API:      {Server},
+		Boundary: {Incident},
+		Consul:   {Forwarder, Redirecter},
+		Deployer: {API},
+		Nomad:    {Autoscaler, Deployer, EventSink},
+		All:      {Boundary, Consul, Nomad},
 	}
 	for mod, targets := range deps {
 		if err := mm.AddDependency(mod, targets...); err != nil {

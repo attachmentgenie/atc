@@ -3,6 +3,7 @@ package atc
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/go-kit/log/level"
 	"github.com/grafana/dskit/server"
@@ -65,4 +66,10 @@ func (dh ignoreSignalHandler) Loop() {
 
 func (dh ignoreSignalHandler) Stop() {
 	close(dh)
+}
+
+func OkHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK")
+	}
 }
