@@ -1,11 +1,18 @@
 package atc
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 )
+
+func OkHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK")
+	}
+}
 
 func (t *Atc) servicesHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(200)

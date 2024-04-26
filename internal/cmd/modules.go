@@ -16,7 +16,7 @@ var modulesCmd = &cobra.Command{
 	Long:  "List available values that can be used as target.",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := atc.Config{}
-		_ = cfg.Server.LogLevel.Set("info")
+		_ = cfg.Server.LogLevel.Set(logLevel)
 		t, _ := atc.New(cfg)
 		allDeps := t.ModuleManager.DependenciesForModule(atc.All)
 

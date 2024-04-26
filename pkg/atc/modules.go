@@ -17,6 +17,7 @@ import (
 	"github.com/attachmentgenie/atc/pkg/atc/incident"
 	"github.com/attachmentgenie/atc/pkg/atc/radar"
 	"github.com/attachmentgenie/atc/pkg/atc/redirecter"
+	atc_server "github.com/attachmentgenie/atc/pkg/atc/server"
 )
 
 const (
@@ -120,7 +121,7 @@ func (t *Atc) initIncident() (services.Service, error) {
 func (t *Atc) initServer() (services.Service, error) {
 
 	t.Cfg.Server.RegisterInstrumentation = true
-	DisableSignalHandling(&t.Cfg.Server)
+	atc_server.DisableSignalHandling(&t.Cfg.Server)
 
 	serv, err := server.New(t.Cfg.Server)
 	if err != nil {
@@ -152,7 +153,7 @@ func (t *Atc) initServer() (services.Service, error) {
 		return svs
 	}
 
-	s := NewServerService(t.Server, servicesToWaitFor)
+	s := atc_server.New(t.Server, servicesToWaitFor)
 
 	return s, nil
 }
@@ -192,12 +193,18 @@ func (t *Atc) setupModuleManager() error {
 	mm.RegisterModule(All, nil)
 
 	deps := map[string][]string{
-		API:      {Server},
-		Boundary: {Incident},
-		Consul:   {Forwarder, Redirecter},
-		Deployer: {API},
-		Nomad:    {Autoscaler, Deployer, EventSink},
-		All:      {Boundary, Consul, Nomad},
+		API:        {Server},
+		Autoscaler: {Server},
+		Boundary:   {Incident},
+		Consul:     {Forwarder, Redirecter},
+		Deployer:   {API},
+		EventSink:  {Server},
+		Forwarder:  {Server},
+		Incident:   {API},
+		Nomad:      {Autoscaler, Deployer, EventSink},
+		Radar:      {Server},
+		Redirecter: {Server},
+		All:        {Boundary, Consul, Nomad},
 	}
 	for mod, targets := range deps {
 		if err := mm.AddDependency(mod, targets...); err != nil {

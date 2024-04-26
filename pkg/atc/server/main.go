@@ -1,21 +1,19 @@
-package atc
+package server
 
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"github.com/go-kit/log/level"
 	"github.com/grafana/dskit/server"
 	"github.com/grafana/dskit/services"
 )
 
-// NewServerService constructs service from Server component.
+// New constructs service from Server component.
 // servicesToWaitFor is called when server is stopping, and should return all
 // services that need to terminate before server actually stops.
 // N.B.: this function is NOT Cortex specific, please let's keep it that way.
 // Passed server should not react on signals. Early return from Run function is considered to be an error.
-func NewServerService(serv *server.Server, servicesToWaitFor func() []services.Service) services.Service {
+func New(serv *server.Server, servicesToWaitFor func() []services.Service) services.Service {
 	serverDone := make(chan error, 1)
 
 	runFn := func(ctx context.Context) error {
@@ -66,10 +64,4 @@ func (dh ignoreSignalHandler) Loop() {
 
 func (dh ignoreSignalHandler) Stop() {
 	close(dh)
-}
-
-func OkHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "OK")
-	}
 }

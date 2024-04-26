@@ -77,7 +77,6 @@ func (t *Atc) Run() error {
 	if err != nil {
 		return err
 	}
-	t.Server.HTTP.Path("/services").Methods("GET").Handler(http.HandlerFunc(t.servicesHandler))
 
 	// get all services, create service manager and tell it to start
 	servs := []services.Service(nil)
@@ -93,6 +92,7 @@ func (t *Atc) Run() error {
 	// Used to delay shutdown but return "not ready" during this delay.
 	shutdownRequested := atomic.NewBool(false)
 	t.Server.HTTP.Path("/health").Handler(t.healthHandler(sm, shutdownRequested))
+	t.Server.HTTP.Path("/services").Methods("GET").Handler(http.HandlerFunc(t.servicesHandler))
 
 	// Let's listen for events from this manager, and log them.
 	healthy := func() { level.Info(t.logger).Log("msg", "Application started") }
