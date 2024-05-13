@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var rootCmd = &cobra.Command{
@@ -20,4 +21,9 @@ func Execute() {
 	}
 }
 
-func init() {}
+func init() {
+	viper.SetEnvPrefix("atc")
+	viper.AutomaticEnv()
+
+	viper.SetDefault("log_level", "info")
+}

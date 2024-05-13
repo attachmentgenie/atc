@@ -5,11 +5,12 @@ import (
 	"github.com/grafana/dskit/server"
 	"github.com/prometheus/common/version"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/attachmentgenie/atc/pkg/atc"
 )
 
-var logLevel = "info"
+var logLevel string
 var port int
 var target []string
 
@@ -41,7 +42,10 @@ var serverCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serverCmd)
-	serverCmd.Flags().IntVar(&port, "port", 8088, "port to expose service on.")
-	serverCmd.Flags().StringSliceVar(&target, "target", []string{"all"}, "Comma-separated list of components to include in the instantiated process. Use the 'modules' command line flag to get a list of available components, and to see which components are included with 'all'. (default all)")
+	serverCmd.PersistentFlags().IntVar(&port, "port", 8088, "port to expose service on.")
+	viper.BindPFlag("port", serverCmd.PersistentFlags().Lookup("port"))
+	serverCmd.PersistentFlags().StringSliceVar(&target, "target", []string{"all"}, "Comma-separated list of components to include in the instantiated process. Use the 'modules' command line flag to get a list of available components, and to see which components are included with 'all'. (default all)")
+	viper.BindPFlag("target", serverCmd.PersistentFlags().Lookup("target"))
 	serverCmd.PersistentFlags().StringVarP(&logLevel, "log_level", "", "info", "Only log messages with the given severity or above.")
+	viper.BindPFlag("log_level", serverCmd.PersistentFlags().Lookup("log_level"))
 }
