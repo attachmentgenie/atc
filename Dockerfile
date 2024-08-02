@@ -1,3 +1,3 @@
 FROM scratch
-ENTRYPOINT ["/atc"]
+ENTRYPOINT ["/atc", "server"]
 COPY atc /
