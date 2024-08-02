@@ -15,7 +15,7 @@ jobs:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v4
         with:
-          version: v1.56.2
+          version: v1.59.1
   test:
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +25,7 @@ jobs:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v4
         with:
-          version: v1.56.2
+          version: v1.59.1
       - run: go test ./...
   build:
     runs-on: ubuntu-latest
@@ -39,5 +39,5 @@ jobs:
       - uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
-          version: v1.25.1
+          version: v2.1.0
           args: build --snapshot --clean
