@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/consul/api v1.29.2
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.20.0
+	github.com/prometheus/client_golang v1.20.3
 	github.com/prometheus/common v0.55.0
 	github.com/prometheus/exporter-toolkit v0.11.0
 	github.com/spf13/cobra v1.8.1
