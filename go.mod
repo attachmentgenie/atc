@@ -5,7 +5,7 @@ go 1.23.4
 require (
 	github.com/go-kit/log v0.2.1
 	github.com/grafana/dskit v0.0.0-20241216174023-0450f2ba7c3d
-	github.com/hashicorp/consul/api v1.30.0
+	github.com/hashicorp/consul/api v1.31.0
 	github.com/jedib0t/go-pretty/v6 v6.6.5
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
