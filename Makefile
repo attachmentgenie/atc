@@ -1,4 +1,5 @@
 APP-BIN := dist/$(shell basename $(shell pwd))
+
 .PHONY: build
 build:
 	goreleaser build --id $(shell go env GOOS) --single-target --snapshot --clean -o ${APP-BIN}
@@ -19,14 +20,23 @@ tag:
 release: tag
 	goreleaser --clean
 
+.PHONY: watch
+watch:
+	gotestsum --watch --format testname
+.PHONY: lint
+lint:
+	pre-commit run --files $(shell git ls-files -m)
+.PHONY: test
+test:
+	gotestsum --format testname
+.PHONY: qa
+qa: lint test
+
 .PHONY: run
 run: ## Run binary.
 	./${APP-BIN} server
 .PHONY: fresh
 fresh: build run
-.PHONY: lint
-lint:
-	golangci-lint run -D errcheck
 .PHONY: consul-dev
 consul-dev:
 	consul agent -dev
