@@ -27,7 +27,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: "homebrew-tap"
-      - uses: anchore/sbom-action/download-syft@v0.20.1
+      - uses: anchore/sbom-action/download-syft@v0.20.2
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
