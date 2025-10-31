@@ -15,7 +15,7 @@ jobs:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.62.2
+          version: v2.5
   test:
     runs-on: ubuntu-latest
     steps:
@@ -23,10 +23,10 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - uses: golangci/golangci-lint-action@v8
+      - uses: autero1/action-gotestsum@v2.0.0
         with:
-          version: v1.62.2
-      - run: go test ./...
+          gotestsum_version: v1.13.0
+      - run: make test
   build:
     runs-on: ubuntu-latest
     env:
@@ -39,5 +39,5 @@ jobs:
       - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: v2.5.0
+          version: '~> v2'
           args: build --snapshot --clean
